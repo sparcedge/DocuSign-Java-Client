@@ -115,7 +115,7 @@ public class DocuSignClient {
 			BufferedInputStream bufferStream = extractAndSaveOutput(conn);
 
 			ObjectMapper mapper = new ObjectMapper();
-			LoginResult loginResult = mapper.readValue( bufferStream, LoginResult.class );
+			LoginResult loginResult = mapper.readValue(bufferStream, LoginResult.class);
 			loginAccounts = loginResult.getLoginAccounts();
 
 			// NOTE: there should never be a time when we get a positive result and less than one account.
@@ -487,7 +487,7 @@ public class DocuSignClient {
 			BufferedInputStream bufferStream = extractAndSaveOutput(conn);
 
 			ObjectMapper mapper = new ObjectMapper();
-			StatusInformation statusInformation = mapper.readValue( bufferStream, StatusInformation.class );
+			StatusInformation statusInformation = mapper.readValue(bufferStream, StatusInformation.class);
 
 			return statusInformation;
 		}
@@ -524,7 +524,7 @@ public class DocuSignClient {
 			BufferedInputStream bufferStream = extractAndSaveOutput(conn);
 
 			ObjectMapper mapper = new ObjectMapper();
-			TemplateInformation templateInformation = mapper.readValue( bufferStream, TemplateInformation.class );
+			TemplateInformation templateInformation = mapper.readValue(bufferStream, TemplateInformation.class);
 
 			return templateInformation;
 		}
@@ -656,8 +656,46 @@ public class DocuSignClient {
 		}
 	}
 
+	/**
+	 * this function will get you a combined document of all the the files in an envelope that were sent out together
+	 *
+	 * this function was added because in requestCombinedDocument, the connection is closed so the InputStream is unable
+	 * to be read from. Instead of modifying the existing method, this one was added to return a tangible primitive
+	 * so the connection can still be closed.
+	 *
+	 * @param envelopeId is the identifier of the envelope you'd like to get a copy of
+	 * @return byte array
+	 * @throws MalformedURLException
+	 * @throws IOException
+	 */
 	public byte[] requestCombinedDocumentAsBytes(String envelopeId) throws IOException {
-		return IOUtils.toByteArray(requestCombinedDocument(envelopeId));
+		String envelopeUrl = baseUrl + "/envelopes/" + envelopeId + "/documents/combined";
+		HttpURLConnection conn = null;
+		byte[] retVal;
+
+		try {
+			conn = getRestConnection(envelopeUrl);
+			conn.setRequestProperty("Accept", "application/pdf");
+			int status = conn.getResponseCode();
+			if (status != 200)    // 200 = OK
+			{
+				String errorText = getErrorDetails(conn);
+				System.err.print("Error calling webservice, status is: " + status);
+				System.err.print("Error calling webservice, error message is: " + errorText);
+				return null;
+			}
+
+			retVal = IOUtils.toByteArray(conn.getInputStream());
+		}
+		finally
+		{
+			if (conn != null)
+			{
+				conn.disconnect();
+			}
+		}
+
+		return retVal;
 	}
 
 	/**
