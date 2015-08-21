@@ -34,6 +34,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import com.docusign.esignature.json.*;
+import org.apache.commons.io.IOUtils;
 import org.xml.sax.InputSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -612,7 +613,7 @@ public class DocuSignClient {
 			BufferedInputStream bufferStream = extractAndSaveOutput(conn);
 
 			ObjectMapper mapper = new ObjectMapper();
-			EnvelopeInformation envelopeInformation = mapper.readValue( bufferStream, EnvelopeInformation.class );
+			EnvelopeInformation envelopeInformation = mapper.readValue(bufferStream, EnvelopeInformation.class);
 
 			return envelopeInformation;
 		}
@@ -653,6 +654,10 @@ public class DocuSignClient {
 			if( conn != null )
 				conn.disconnect();
 		}
+	}
+
+	public byte[] requestCombinedDocumentAsBytes(String envelopeId) throws IOException {
+		return IOUtils.toByteArray(requestCombinedDocument(envelopeId));
 	}
 
 	/**
